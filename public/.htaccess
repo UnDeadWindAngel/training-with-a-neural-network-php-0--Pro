@@ -1,0 +1,21 @@
+AddCharset UTF-8 .html
+<FilesMatch "\.(html, php)$">
+   Header set Cache-Control: "no-cache, no-store"
+   Header unset ETag
+</FilesMatch>
+Header set X-Content-Type-Options nosniff
+# DISABLE CACHING
+<IfModule mod_headers.c>
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires 0
+</IfModule>
+
+# Включаем модуль перезаписи URL
+RewriteEngine On
+# Если запрос не является существующим файлом
+RewriteCond %{REQUEST_FILENAME} !-f
+# И не является существующей директорией
+RewriteCond %{REQUEST_FILENAME} !-d
+# Перенаправляем все запросы в public/index.php
+RewriteRule ^(.*)$ index.php [QSA,L]

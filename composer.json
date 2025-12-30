@@ -1,0 +1,26 @@
+{
+    "name": "un-dead-wind-angel/pet-phpoop-example.local",
+    "description": "Учебный проект форума",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "src\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Vladimir Novikov",
+            "email": "UnDeadWindAngel@yandex.ru"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=8.0",
+        "vlucas/phpdotenv": "^5.6@dev",
+        "bramus/router": "dev-master"
+    },
+    "config": {
+        "vendor-dir": "vendor"
+    }
+}
