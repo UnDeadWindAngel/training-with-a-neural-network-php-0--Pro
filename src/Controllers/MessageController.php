@@ -8,13 +8,9 @@ class MessageController
 {
     private $messageModel;
 
-    public function __construct($db = null)
+    public function __construct(Message $messageModel)
     {
-        // Если БД не передана, создаем подключение
-        if (!$db) {
-            $db = \src\Core\Database::getInstance()->getConnection();
-        }
-        $this->messageModel = new Message($db);
+        $this->messageModel = $messageModel;
     }
 
     // Для обычного HTML вывода
@@ -73,13 +69,6 @@ class MessageController
     // Обработка POST запроса
     public function create()
     {
-        // Проверка CSRF (должна быть в Middleware, но пока здесь)
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'CSRF token validation failed']);
-            return;
-        }
-
         if (!empty($_POST['name']) && !empty($_POST['message'])) {
             $this->messageModel->create(
                 $_POST['name'],

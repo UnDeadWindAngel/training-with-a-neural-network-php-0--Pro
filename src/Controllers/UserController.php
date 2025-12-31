@@ -8,13 +8,9 @@ class UserController
 {
     private $userModel;
 
-    public function __construct($db = null)
+    public function __construct(User $userModel)
     {
-        // Если БД не передана, создаем подключение
-        if (!$db) {
-            $db = \src\Core\Database::getInstance()->getConnection();
-        }
-        $this->userModel = new User($db);
+        $this->userModel = $userModel;
     }
 
     // Для обычного HTML вывода
@@ -34,13 +30,6 @@ class UserController
 
     public function register()
     {
-        // Проверка CSRF (должна быть в Middleware, но пока здесь)
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            http_response_code(403);
-            echo json_encode(['error' => 'CSRF token validation failed']);
-            return;
-        }
-
         if (!empty($_POST['usermail']) && !empty($_POST['username']) && !empty($_POST['userpassword'])
                     && !empty($_POST['userconfirmpassword'])) {
 
@@ -70,7 +59,7 @@ class UserController
         $_SESSION['flash_type'] = 'success';
 
         // Редирект на страницу сообщений
-        header('Location: /public/login');
+        header('Location: /public/messages');
         exit;
     }
 

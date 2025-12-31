@@ -1,36 +1,212 @@
 <?php
 // Регистрация маршрутов
 use Bramus\Router\Router;
+use src\Core\Container;
+use src\Core\MiddlewarePipeline;
 
 $router = new Router();
 
 // Устанавливаем базовый путь (если проект в подпапке)
 $router->setBasePath('/public');
 
-// Middleware для CSRF (добавим позже)
-// $router->before('POST|PUT|DELETE', '/.*', function() { ... });
+// Получаем контейнер из глобальной переменной
+$container = $GLOBALS['container'];
+
+// Функция для создания pipeline
+$createPipeline = function(array $middlewareClasses = []) use ($container) {
+    $pipeline = new MiddlewarePipeline();
+
+    // Глобальные middleware
+    $pipeline->add($container->get(\src\Middleware\LoggingMiddleware::class));
+
+    // Добавляем переданные middleware
+    foreach ($middlewareClasses as $middlewareClass) {
+        $pipeline->add($container->get($middlewareClass));
+    }
+
+    return $pipeline;
+};
 
 // Главная страница
-$router->get('/', function() {
-    $title = $_ENV['APP_NAME'] ?? 'Гостевая книга';
-    $content = '';
-    include __DIR__ . '/Views/layout.php';
+$router->get('/', function() use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST
+    ];
+
+    $pipeline = $createPipeline();
+
+    $response = $pipeline->process($request, function($request) use ($container) {
+        $title = $_ENV['APP_NAME'] ?? 'Гостевая книга';
+        $content = '';
+        require __DIR__ . '/Views/layout.php';
+        return true;
+    });
+});
+
+// API маршруты (логирование + CSRF для модифицирующих запросов)
+$router->get('/api/messages', function() use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST,
+        'headers' => getallheaders()
+    ];
+
+    $pipeline = $createPipeline();
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\MessageController::class);
+        $controller->indexJson();
+    });
+});
+
+$router->post('/api/messages', function() use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST,
+        'headers' => getallheaders()
+    ];
+
+    $pipeline = $createPipeline([\src\Middleware\CSRFMiddleware::class]);
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\MessageController::class);
+        $controller->create();
+    });
+});
+
+// Веб-маршруты с полным набором middleware
+$router->get('/messages', function() use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST
+    ];
+
+    $pipeline = $createPipeline([\src\Middleware\AuthMiddleware::class]);
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\MessageController::class);
+        $controller->indexView();
+    });
+});
+
+$router->post('/messages', function() use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST
+    ];
+
+    $pipeline = $createPipeline([
+        \src\Middleware\AuthMiddleware::class,
+        \src\Middleware\CSRFMiddleware::class
+    ]);
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\MessageController::class);
+        $controller->create();
+    });
+});
+
+$router->post('/register', function() use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST
+    ];
+
+    $pipeline = $createPipeline([
+        \src\Middleware\AuthMiddleware::class,
+        \src\Middleware\CSRFMiddleware::class
+    ]);
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\UserController::class);
+        $controller->register();
+    });
+});
+
+$router->get('/login', function() use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST
+    ];
+
+    $pipeline = $createPipeline();
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\UserController::class);
+        $controller->indexView();
+    });
+});
+
+$router->post('/login', function() use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST
+    ];
+
+    $pipeline = $createPipeline();
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\UserController::class);
+        $controller->login();
+    });
+});
+
+$router->post('/logout', function() use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST
+    ];
+
+    $pipeline = $createPipeline();
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\UserController::class);
+        $controller->logout();
+    });
 });
 
 // Маршруты для сообщений
-$router->get('/messages', 'src\Controllers\MessageController@indexView');
-$router->post('/messages', 'src\Controllers\MessageController@create');
 $router->delete('/messages/(\d+)/delete', 'src\Controllers\MessageController@delete');
 $router->put('/messages/(\d+)/update', 'src\Controllers\MessageController@update');
 
-// Маршруты для пользователей
-$router->get('/login', 'src\Controllers\UserController@indexView');
-$router->post('/register', 'src\Controllers\UserController@register');
-$router->post('/login', 'src\Controllers\UserController@login');
-$router->post('/logout', 'src\Controllers\UserController@logout');
-
 // REST API (для будущего SPA)
-$router->get('/api/messages', 'src\Controllers\MessageController@indexJson');
 $router->get('/api/messages/(\d+)', 'src\Controllers\MessageController@show');
 
 // 404 - страница не найдена
