@@ -2,15 +2,15 @@
 
 namespace src\Controllers;
 
-use src\Models\Message;
+use src\Services\MessageService;
 
 class MessageController
 {
-    private $messageModel;
+    private $messageService;
 
-    public function __construct(Message $messageModel)
+    public function __construct(MessageService $messageService)
     {
-        $this->messageModel = $messageModel;
+        $this->messageService = $messageService;
     }
 
     // Для обычного HTML вывода
@@ -20,7 +20,7 @@ class MessageController
         $page = (int)($_GET['page'] ?? 1);
 
         // Получаем данные
-        $data = $this->index($search, $page);
+        $data = $this->messageService->getMessages($page, 10, $search);
 
         // Передаем данные в представление явно
         $title = $_ENV['APP_NAME'] ?? 'Гостевая книга';
@@ -53,8 +53,7 @@ class MessageController
     // Показать одно сообщение (для API)
     public function show($id)
     {
-        // Реализуйте метод getById в модели Message
-        $message = $this->messageModel->getById($id);
+        $message = $this->messageService->findMessage($id);
 
         if (!$message) {
             http_response_code(404);
@@ -69,38 +68,38 @@ class MessageController
     // Обработка POST запроса
     public function create()
     {
-        if (!empty($_POST['name']) && !empty($_POST['message'])) {
-            $this->messageModel->create(
-                $_POST['name'],
-                $_POST['message'],
-                $_SERVER['REMOTE_ADDR']
-            );
+        $name = $_POST['name'] ?? '';
+        $message = $_POST['message'] ?? '';
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+        if (!empty($name) && !empty($message)) {
+            $this->messageService->createMessage($name, $message, $ip);
 
             $_SESSION['flash_message'] = 'Сообщение добавлено';
             $_SESSION['flash_type'] = 'success';
 
             // Редирект на страницу сообщений
             header('Location: /public/messages');
-            exit;
+            return;
         }
 
         $_SESSION['flash_message'] = 'Заполните все поля';
         $_SESSION['flash_type'] = 'error';
         header('Location: /public/messages');
-        exit;
+        return;
     }
 
     // Удаление с параметром из URL
     public function delete($id)
     {
-        var_dump($_SERVER);
-        if (empty($_SESSION['user_id'])) {
+        $UID = $_SESSION['user_id'] ?? '';
+        if (empty($UID)) {
             http_response_code(403);
             echo json_encode(['error' => 'Требуется авторизация']);
             return;
         }
 
-        $this->messageModel->delete($id);
+        $this->messageService->deleteMessage($id);
         $_SESSION['flash_message'] = 'Сообщение удалено';
         $_SESSION['flash_type'] = 'success';
 
@@ -111,14 +110,16 @@ class MessageController
     // Обновление с параметром из URL
     public function update($id)
     {
-        if (empty($_SESSION['user_id'])) {
+        $UID = $_SESSION['user_id'] ?? '';
+        $NewMSG = $_POST['newMessage'] ?? '';
+        if (empty($UID)) {
             http_response_code(403);
             echo json_encode(['error' => 'Требуется авторизация']);
             return;
         }
 
-        if (!empty($_POST['newMessage'])) {
-            $this->messageModel->update($id, $_POST['newMessage']);
+        if (!empty($NewMSG)) {
+            $this->messageService->updateMessage($id, $NewMSG);
             $_SESSION['flash_message'] = 'Сообщение обновлено';
             $_SESSION['flash_type'] = 'success';
         }
@@ -129,17 +130,13 @@ class MessageController
 
     public function index($search = '', $page = 1, $limit = 10)
     {
-        $offset = ($page - 1) * $limit;
-
-        $messages = $this->messageModel->getAll($search, $limit, $offset);
-        $total = $this->messageModel->getCount($search);
-        $totalPages = ceil($total / $limit);
+        $messages = $this->messageService->getMessages($page, $limit, $search);
 
         return [
-            'messages' => $messages,
-            'total' => $total,
-            'totalPages' => $totalPages,
-            'currentPage' => $page,
+            'messages' => $messages['data'],
+            'total' => $messages['total'],
+            'totalPages' => $messages['totalPages'],
+            'currentPage' => $messages['currentPage'],
             'search' => $search,
             'limit' => $limit
         ];

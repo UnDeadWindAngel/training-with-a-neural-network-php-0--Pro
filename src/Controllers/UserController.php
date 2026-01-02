@@ -2,15 +2,15 @@
 
 namespace src\Controllers;
 
-use src\Models\User;
+use src\Services\UserService;
 
 class UserController
 {
-    private $userModel;
+    private $userService;
 
-    public function __construct(User $userModel)
+    public function __construct(UserService $userService)
     {
-        $this->userModel = $userModel;
+        $this->userService = $userService;
     }
 
     // Для обычного HTML вывода
@@ -30,64 +30,60 @@ class UserController
 
     public function register()
     {
-        if (!empty($_POST['usermail']) && !empty($_POST['username']) && !empty($_POST['userpassword'])
-                    && !empty($_POST['userconfirmpassword'])) {
-
-            $email=$_POST['usermail'];
-            $login=$_POST['username'];
-            $password=$_POST['userpassword'];
-            $confirmPassword=$_POST['userconfirmpassword'];
-            $ip=$_SERVER['REMOTE_ADDR'];
+        try {
+            $email = $_POST['usermail'] ?? '';
+            $login = $_POST['username'] ?? '';
+            $password = $_POST['userpassword'] ?? '';
+            $confirmPassword = $_POST['userconfirmpassword'] ?? '';
 
             // Валидация
             if ($password !== $confirmPassword) {
-                return ['error' => 'Пароли не совпадают'];
+                throw new \Exception('Пароли не совпадают');
             }
 
-            if (!$this->userModel->validatePassword($password)) {
-                return ['error' => 'Пароль должен быть минимум 8 символов, содержать буквы и цифры'];
-            }
+            $this->userService->register($email, $login, $password, $_SERVER['REMOTE_ADDR']);
 
-            // Хеширование пароля
-            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-            // Создание пользователя
-            $this->userModel->create($email, $login, $hashedPassword, $ip);
+            $_SESSION['flash_message'] = 'Регистрация успешна! Теперь войдите.';
+            $_SESSION['flash_type'] = 'success';
+            header('Location: /public/login');
+            exit;
         }
+        catch (\Exception $e){
 
-        $_SESSION['flash_message'] = 'Пользователь создан';
-        $_SESSION['flash_type'] = 'success';
-
-        // Редирект на страницу сообщений
-        header('Location: /public/messages');
-        exit;
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_type'] = 'error';
+            header('Location: /public/login');
+            exit;
+        }
     }
 
     public function login()
     {
-        $login=$_POST['searchlogin'];
-        $password=$_POST['searchpassword'];
+        try {
+            $login=$_POST['searchlogin'];
+            $password=$_POST['searchpassword'];
 
-        $user = $this->userModel->findByLogin($login);
+            $user = $this->userService->authenticate($login, $password);
 
-        if (!$user) {
-            return ['error' => 'Пользователь не найден'];
+            // Успешная авторизация
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_login'] = $user['login'];
+            $_SESSION['user_email'] = $user['mail'];
+            $_SESSION['flash_message'] = 'Пользователь авторизован';
+            $_SESSION['flash_type'] = 'success';
+
+            // Редирект на страницу сообщений
+            header('Location: /public/login');
+            exit;
+
         }
+        catch (\Exception $e){
 
-        if (!password_verify($password, $user['password'])) {
-            return ['error' => 'Неверный пароль'];
+            $_SESSION['flash_message'] = $e->getMessage();
+            $_SESSION['flash_type'] = 'error';
+            header('Location: /public/login');
+            exit;
         }
-
-        // Успешная авторизация
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_login'] = $user['login'];
-        $_SESSION['user_email'] = $user['mail'];
-        $_SESSION['flash_message'] = 'Пользователь авторизован';
-        $_SESSION['flash_type'] = 'success';
-
-        // Редирект на страницу сообщений
-        header('Location: /public/login');
-        exit;
     }
 
     public function logout()

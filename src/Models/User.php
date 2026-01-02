@@ -1,4 +1,8 @@
 <?php
+/*
+ * В связи с изменением архитектуры на Repository необходимость в моделях отпала.
+ * Модели переделаны в DTO для обратной совместимости.
+*/
 
 namespace src\Models;
 
@@ -6,78 +10,87 @@ use PDO;
 
 class User
 {
-    private $db;
+    private $id;
+    private $email;
+    private $login;
+    private $password;
+    private $createdAt;
+    private $ipAddress;
 
-    public function __construct(PDO $db)
+    // Геттеры и сеттеры
+    public function getId()
     {
-        $this->db = $db;
+        return $this->id;
     }
 
-    //проверка существования пользователя
-    public function exists($email, $login)
+    public function setId($id): static
     {
-        $sql = "SELECT id FROM users WHERE mail = ? OR login = ? LIMIT 1";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(1, trim($email), PDO::PARAM_STR);
-        $stmt->bindValue(2, trim($login), PDO::PARAM_STR);
-        $stmt->execute();
+        $this->id = $id;
 
-        return $stmt->rowCount() > 0;
+        return $this;
     }
 
-    public function create($mail, $login, $password, $ip)
+    public function getEmail()
     {
-        if ($this->exists($mail, $login)) {
-            return ['error' => 'Пользователь уже существует'];
-        }
-
-        $sql = "INSERT INTO users (mail, login, password, ip_address) VALUES (?, ?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(1, filter_var(trim($mail), FILTER_VALIDATE_EMAIL), PDO::PARAM_STR);
-        $stmt->bindValue(2, trim($login), PDO::PARAM_STR);
-        $stmt->bindValue(3, $password, PDO::PARAM_STR);
-        $stmt->bindValue(4, $ip, PDO::PARAM_STR);
-        $success = $stmt->execute();
-
-        return $success ? ['id' => $this->db->lastInsertId()] : ['error' => 'Ошибка создания'];
+        return $this->email;
     }
 
-    public function findByLogin($login)
+    public function setEmail($email): static
     {
-        $sql = "SELECT * FROM users WHERE login = ? LIMIT 1";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(1, trim($login), PDO::PARAM_STR);
-        $stmt->execute();
+        $this->email = $email;
 
-        return $stmt->fetch();
+        return $this;
     }
 
-    public function delete($userId ,$id)
+    public function getLogin()
     {
-        if ($userId == $id) {
-            return false;
-        }
-
-        $sql = "DELETE FROM users WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(1, $id, PDO::PARAM_INT);
-
-        return $stmt->execute();
+        return $this->login;
     }
 
-    public function validatePassword($password)
+    public function setLogin($login): static
     {
-        // Минимальная длина 8 символов, хотя бы одна цифра и буква
-        return strlen($password) >= 8 && preg_match('/[A-Za-z]/', $password) && preg_match('/\d/', $password);
+        $this->login = $login;
+
+        return $this;
     }
 
-    /* заложено для изменения параметров пользователя если появится необходимость
+    public function getPassword()
+    {
+        return $this->password;
+    }
 
-    public function update($id, $newMessage) {
-         $sql = "UPDATE messages SET message = ? WHERE id = ?";
-         $stmt = $this->db->prepare($sql);
-         $stmt->bindValue(1,  htmlspecialchars(trim($newMessage)), PDO::PARAM_STR);
-         $stmt->bindValue(2, $id, PDO::PARAM_INT);
-         return $stmt->execute();
-     }*/
+    public function setPassword($password): static
+    {
+        $this->password = $password;
+
+        return $this;
+    }
+
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt($createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getIpAddress()
+    {
+        return $this->ipAddress;
+    }
+
+    public function setIpAddress($ipAddress): static
+    {
+        $this->ipAddress = $ipAddress;
+
+        return $this;
+    }
+
+    public function __construct()
+    {
+    }
 }

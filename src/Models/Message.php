@@ -1,98 +1,80 @@
 <?php
-
+/*
+ * В связи с изменением архитектуры на Repository необходимость в моделях отпала.
+ * Модели переделаны в DTO для обратной совместимости.
+*/
 namespace src\Models;
-
-use PDO;
 
 class Message
 {
-    private $db;
+    private $id;
+    private $name;
+    private $message;
+    private $createdAt;
+    private $ipAddress;
 
-    public function __construct(PDO $db)
+    // Геттеры и сеттеры
+    public function getId()
     {
-        $this->db = $db;
+        return $this->id;
     }
 
-    public function getAll($search = '', $limit = 10, $offset = 0)
+    public function setId($id): static
     {
+        $this->id = $id;
 
-        if (!empty($search)) {
-            $searchParam = '%' . $search . '%';
-            $sql = "SELECT * FROM messages WHERE message LIKE ? OR name LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(1, $searchParam, PDO::PARAM_STR);
-            $stmt->bindValue(2, $searchParam, PDO::PARAM_STR);
-            $stmt->bindValue(3, $limit, PDO::PARAM_INT);
-            $stmt->bindValue(4, $offset, PDO::PARAM_INT);
-        } else {
-            $sql = "SELECT * FROM messages ORDER BY created_at DESC LIMIT ? OFFSET ?";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(1, $limit, PDO::PARAM_INT);
-            $stmt->bindValue(2, $offset, PDO::PARAM_INT);
-        }
-        $stmt->execute();
-
-        return $stmt->fetchAll();
-    }
-    public function getById($id = 0)
-    {
-        if(!empty($id)){
-            $searchParam = $id;
-            $sql = "SELECT * FROM messages WHERE messages.id = ?";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(1, $searchParam, PDO::PARAM_STR);
-            $stmt->execute();
-
-            return $stmt->fetchAll();
-        }
-        return false;
+        return $this;
     }
 
-    public function getCount($search = '')
+    public function getName()
     {
-        if (!empty($search)) {
-            $searchParam = '%' . $search . '%';
-            $sql = "SELECT COUNT(*) FROM messages WHERE message LIKE ? OR name LIKE ?";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(1, $searchParam, PDO::PARAM_STR);
-            $stmt->bindValue(2, $searchParam, PDO::PARAM_STR);
-        } else {
-            $sql = "SELECT COUNT(*) FROM messages";
-            $stmt = $this->db->prepare($sql);
-        }
-        $stmt->execute();
-
-        return $stmt->fetchColumn();
+        return $this->name;
     }
 
-    public function create($name, $message, $ip)
+    public function setName($name): static
     {
-        $sql = "INSERT INTO messages (name, message, ip_address) VALUES (?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(1, trim($name), PDO::PARAM_STR);
-        $stmt->bindValue(2, trim($message), PDO::PARAM_STR);
-        $stmt->bindValue(3, $ip, PDO::PARAM_STR);
+        $this->name = $name;
 
-        return $stmt->execute();
+        return $this;
     }
 
-    public function delete($id)
+    public function getMessage()
     {
-
-        $sql = "DELETE FROM messages WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(1, $id, PDO::PARAM_INT);
-
-        return $stmt->execute();
+        return $this->message;
     }
 
-    public function update($id, $newMessage)
+    public function setMessage($message): static
     {
-        $sql = "UPDATE messages SET message = ? WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(1, trim($newMessage), PDO::PARAM_STR);
-        $stmt->bindValue(2, $id, PDO::PARAM_INT);
+        $this->message = $message;
 
-        return $stmt->execute();
+        return $this;
+    }
+
+    public function getCreatedAt()
+    {
+        return new \DateTime($this->createdAt);
+    }
+
+    public function setCreatedAt($createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getIpAddress()
+    {
+        return $this->ipAddress;
+    }
+
+    public function setIpAddress($ipAddress): static
+    {
+        $this->ipAddress = $ipAddress;
+
+        return $this;
+    }
+
+    public function __construct()
+    {
     }
 }

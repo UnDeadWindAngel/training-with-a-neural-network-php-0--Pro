@@ -8,6 +8,11 @@
             "src\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Vladimir Novikov",
@@ -23,5 +28,11 @@
     },
     "config": {
         "vendor-dir": "vendor"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.0@dev"
+    },
+    "scripts": {
+        "test": "phpunit"
     }
 }

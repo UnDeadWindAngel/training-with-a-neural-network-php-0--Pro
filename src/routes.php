@@ -87,6 +87,29 @@ $router->post('/api/messages', function() use ($createPipeline, $container) {
     });
 });
 
+// API маршруты (логирование + CSRF для модифицирующих запросов)
+$router->get('/api/message/(\d+)', function($id) use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST,
+        'attributes' => [
+            'id' => $id
+        ],
+        'headers' => getallheaders()
+    ];
+
+    $pipeline = $createPipeline();
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\MessageController::class);
+        $controller->show($request['attributes']['id']);
+    });
+});
+
 // Веб-маршруты с полным набором middleware
 $router->get('/messages', function() use ($createPipeline, $container) {
     $request = [
@@ -138,7 +161,6 @@ $router->post('/register', function() use ($createPipeline, $container) {
     ];
 
     $pipeline = $createPipeline([
-        \src\Middleware\AuthMiddleware::class,
         \src\Middleware\CSRFMiddleware::class
     ]);
 
@@ -205,9 +227,6 @@ $router->post('/logout', function() use ($createPipeline, $container) {
 // Маршруты для сообщений
 $router->delete('/messages/(\d+)/delete', 'src\Controllers\MessageController@delete');
 $router->put('/messages/(\d+)/update', 'src\Controllers\MessageController@update');
-
-// REST API (для будущего SPA)
-$router->get('/api/messages/(\d+)', 'src\Controllers\MessageController@show');
 
 // 404 - страница не найдена
 $router->set404(function() {
