@@ -129,6 +129,54 @@ $router->get('/messages', function() use ($createPipeline, $container) {
     });
 });
 
+$router->delete('/messages/(\d+)/delete', function($id) use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST,
+        'attributes' => [
+            'id' => $id
+        ]
+    ];
+
+    $pipeline = $createPipeline([
+        \src\Middleware\AuthMiddleware::class,
+        \src\Middleware\CSRFMiddleware::class
+    ]);
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\MessageController::class);
+        $controller->delete($request['attributes']['id']);
+    });
+});
+
+$router->put('/messages/(\d+)/update', function($id) use ($createPipeline, $container) {
+    $request = [
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'uri' => parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'get' => $_GET,
+        'post' => $_POST,
+        'attributes' => [
+            'id' => $id
+        ]
+    ];
+
+    $pipeline = $createPipeline([
+        \src\Middleware\AuthMiddleware::class,
+        \src\Middleware\CSRFMiddleware::class
+    ]);
+
+    $pipeline->process($request, function($request) use ($container) {
+        $controller = $container->get(\src\Controllers\MessageController::class);
+        $controller->update($request['attributes']['id']);
+    });
+});
+
 $router->post('/messages', function() use ($createPipeline, $container) {
     $request = [
         'method' => $_SERVER['REQUEST_METHOD'],
@@ -224,10 +272,6 @@ $router->post('/logout', function() use ($createPipeline, $container) {
     });
 });
 
-// Маршруты для сообщений
-$router->delete('/messages/(\d+)/delete', 'src\Controllers\MessageController@delete');
-$router->put('/messages/(\d+)/update', 'src\Controllers\MessageController@update');
-
 // 404 - страница не найдена
 $router->set404(function() {
     http_response_code(404);
@@ -235,6 +279,14 @@ $router->set404(function() {
     $content = '<h1>404 - Страница не найдена</h1>';
     include __DIR__ . '/Views/layout.php';
 });
+
+//ручная поддержка методов PUT,DELETE,PATCH
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_method'])) {
+    $method = strtoupper($_POST['_method']);
+    if (in_array($method, ['PUT', 'PATCH', 'DELETE'])) {
+        $_SERVER['REQUEST_METHOD'] = $method;
+    }
+}
 
 // Запуск маршрутизатора
 $router->run();

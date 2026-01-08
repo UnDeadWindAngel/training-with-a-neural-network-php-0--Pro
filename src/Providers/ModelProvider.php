@@ -2,25 +2,20 @@
 namespace src\Providers;
 
 use src\Core\ServiceProvider;
-use src\Core\Database;
 use src\Models\Message;
 use src\Models\User;
 
-class AppServiceProvider extends ServiceProvider
+class ModelProvider extends ServiceProvider
 {
     public function register(): void
     {
         // Регистрируем сервисы
-        $this->container->singleton(Database::class, function() {
-            return Database::getInstance();
+        $this->container->set(Message::class, function() {
+            return new Message();
         });
 
-        $this->container->set(Message::class, function($c) {
-            return new Message($c->get(Database::class)->getConnection());
-        });
-
-        $this->container->set(User::class, function($c) {
-            return new User($c->get(Database::class)->getConnection());
+        $this->container->set(User::class, function() {
+            return new User();
         });
     }
 

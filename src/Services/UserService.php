@@ -2,14 +2,21 @@
 namespace src\Services;
 
 use src\Repositories\UserRepositoryInterface;
+use src\Core\Cache\CacheInterface;
 
 class UserService
 {
     private $userRepository;
+    private $cache;
+    private int $cacheTtl = 300;
 
-    public function __construct(UserRepositoryInterface $userRepository)
+    public function __construct(
+        UserRepositoryInterface $userRepository,
+        CacheInterface $cache
+    )
     {
         $this->userRepository = $userRepository;
+        $this->cache = $cache;
     }
 
     /**

@@ -23,8 +23,7 @@
         <p><?php echo nl2br(htmlspecialchars($msg['message'])); ?></p>
 
         <?php if(!empty($_SESSION['user_id'])):?>
-            <form action="/public/messages/<?php echo $msg['id']; ?>/delete" method="POST" style="display:inline;"
-                  onsubmit="event.preventDefault(); deleteMessage(<?php echo $msg['id']; ?>)">
+            <form action="/public/messages/<?php echo $msg['id']; ?>/delete" method="POST" style="display:inline;">
                 <input type="hidden" name="_method" value="DELETE">
                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <button type="submit">Удалить</button>
@@ -52,17 +51,3 @@
         <?php endfor; ?>
     </div>
 <?php endif; ?>
-
-<!-- JavaScript для поддержки PUT/DELETE -->
-<script>
-    function deleteMessage(id) {
-        if (confirm('Удалить сообщение?')) {
-            fetch('/public/messages/' + id + '/delete', {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-Token': '<?php echo $_SESSION['csrf_token']; ?>'
-                }
-            }).then(() => location.reload());
-        }
-    }
-</script>
