@@ -63,7 +63,7 @@ class UserController
             $login=$_POST['searchlogin'];
             $password=$_POST['searchpassword'];
 
-            $user = $this->userService->authenticate($login, $password);
+            $user = $this->userService->authenticate($login, $password, $_SERVER['REMOTE_ADDR']);
 
             // Успешная авторизация
             $_SESSION['user_id'] = $user['id'];

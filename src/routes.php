@@ -1,7 +1,6 @@
 <?php
 // Регистрация маршрутов
 use Bramus\Router\Router;
-use src\Core\Container;
 use src\Core\MiddlewarePipeline;
 
 $router = new Router();

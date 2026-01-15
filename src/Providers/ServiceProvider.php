@@ -13,14 +13,16 @@ class ServiceProvider extends BaseServiceProvider
         $this->container->singleton(MessageService::class, function($c) {
             return new MessageService(
                 $c->get('message.repository.interface'),
-                $c->get('cache')
+                $c->get('cache'),
+                $c->get('security')
             );
         });
 
         $this->container->singleton(UserService::class, function($c) {
             return new UserService(
                 $c->get('user.repository.interface'),
-                $c->get('cache')
+                $c->get('cache'),
+                $c->get('security')
             );
         });
 
