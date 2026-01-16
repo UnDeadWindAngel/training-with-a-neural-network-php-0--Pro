@@ -65,7 +65,7 @@ return [
                 '/public/ping',
             ],
             'session_timeout' => 1800,
-            'redirect_to' => '/login',
+            'redirect_to' => '/public/login',
         ],
         'logging' => [
             'enabled' => true,

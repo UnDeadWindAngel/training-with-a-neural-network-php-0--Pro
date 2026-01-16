@@ -48,6 +48,15 @@ class SecurityService
     // Защита от CSRF (расширенная)
     public function generateCsrfToken(): string
     {
+        // Очищаем просроченные токены
+        if (isset($_SESSION['csrf_tokens'])) {
+            foreach ($_SESSION['csrf_tokens'] as $key => $tokenData) {
+                if (time() > $tokenData['expires_at']) {
+                    unset($_SESSION['csrf_tokens'][$key]);
+                }
+            }
+        }
+
         $token = bin2hex(random_bytes(32));
         $_SESSION['csrf_tokens'][$token] = [
             'token' => $token,
@@ -56,7 +65,7 @@ class SecurityService
         ];
 
         // Ограничиваем количество токенов в сессии
-        if (count($_SESSION['csrf_tokens']) > 10) {
+        if (count($_SESSION['csrf_tokens']) > 50) {
             array_shift($_SESSION['csrf_tokens']);
         }
 

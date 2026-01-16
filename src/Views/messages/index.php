@@ -1,7 +1,7 @@
 
 <!-- Форма добавления -->
 <form action="/public/messages" method="POST">
-    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo $csrfTokenForAddForm; ?>">
     <input type="text" name="name" placeholder="Имя" required><br>
     <textarea name="message" placeholder="Сообщение" required></textarea><br>
     <button type="submit">Отправить</button>
@@ -25,13 +25,13 @@
         <?php if(!empty($_SESSION['user_id'])):?>
             <form action="/public/messages/<?php echo $msg['id']; ?>/delete" method="POST" style="display:inline;">
                 <input type="hidden" name="_method" value="DELETE">
-                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $securityService->generateCsrfToken(); ?>">
                 <button type="submit">Удалить</button>
             </form>
 
             <form action="/public/messages/<?php echo $msg['id']; ?>/update" method="POST" style="display:inline;">
                 <input type="hidden" name="_method" value="PUT">
-                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $securityService->generateCsrfToken(); ?>">
                 <input type="hidden" name="id" value="<?php echo $msg['id']; ?>">
                 <input type="text" name="newMessage" placeholder="Новый текст">
                 <button type="submit">Обновить</button>

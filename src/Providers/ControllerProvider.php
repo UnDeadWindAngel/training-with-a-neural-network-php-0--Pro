@@ -11,11 +11,17 @@ class ControllerProvider extends ServiceProvider
     {
         // Контроллеры (factory - каждый запрос новый экземпляр)
         $this->container->factory(MessageController::class, function($c) {
-            return new MessageController($c->get('message.service'));
+            return new MessageController(
+                $c->get('message.service'),
+                $c->get('security')
+            );
         });
 
         $this->container->factory(UserController::class, function($c) {
-            return new UserController($c->get('user.service'));
+            return new UserController(
+                $c->get('user.service'),
+                $c->get('security')
+            );
         });
 
         // Алиасы для удобства

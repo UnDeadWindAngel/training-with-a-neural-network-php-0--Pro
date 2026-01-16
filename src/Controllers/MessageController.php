@@ -2,15 +2,18 @@
 
 namespace src\Controllers;
 
+use src\Security\SecurityService;
 use src\Services\MessageService;
 
 class MessageController
 {
-    private $messageService;
+    private MessageService $messageService;
+    private SecurityService $securityService;
 
-    public function __construct(MessageService $messageService)
+    public function __construct(MessageService $messageService, SecurityService $securityService)
     {
         $this->messageService = $messageService;
+        $this->securityService = $securityService;
     }
 
     // Для обычного HTML вывода
@@ -21,6 +24,12 @@ class MessageController
 
         // Получаем данные
         $data = $this->messageService->getMessages($page, 10, $search);
+
+        // Передаем в представление сервис защиты для генерации токенов CSRF
+        $securityService = $this->securityService;
+
+        // Генерируем CSRF токен для формы добавления
+        $csrfTokenForAddForm = $securityService->generateCsrfToken();
 
         // Передаем данные в представление явно
         $title = $_ENV['APP_NAME'] ?? 'Гостевая книга';

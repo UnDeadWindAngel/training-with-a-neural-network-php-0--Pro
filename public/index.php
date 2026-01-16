@@ -14,11 +14,6 @@ session_start([
     'use_strict_mode' => true
 ]);
 
-// CSRF токен
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
 // Инициализируем контейнер зависимостей
 $container = require_once __DIR__ . '/../config/container.php';
 

@@ -2,15 +2,18 @@
 
 namespace src\Controllers;
 
+use src\Security\SecurityService;
 use src\Services\UserService;
 
 class UserController
 {
-    private $userService;
+    private UserService $userService;
+    private SecurityService $securityService;
 
-    public function __construct(UserService $userService)
+    public function __construct(UserService $userService, SecurityService $securityService)
     {
         $this->userService = $userService;
+        $this->securityService = $securityService;
     }
 
     // Для обычного HTML вывода
@@ -19,6 +22,11 @@ class UserController
         $title = $_ENV['APP_NAME'] ?? 'Гостевая книга';
         $login = $_SESSION['user_login'] ?? '';
         $password = '';
+
+        // Генерация CSRF токенов для форм
+        $csrfTokenRegister = $this->securityService->generateCsrfToken();
+        $csrfTokenLogin = $this->securityService->generateCsrfToken();
+        $csrfTokenLogout = $this->securityService->generateCsrfToken();
 
         // Подключаем представление
         ob_start();
